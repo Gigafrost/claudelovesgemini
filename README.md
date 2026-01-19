@@ -39,10 +39,10 @@ Quick method:
 ```bash
 # If you have ImageMagick installed
 cd icons
-convert -size 128x128 -background "#667eea" -fill white -gravity center \
+magick -size 128x128 -background "#667eea" -fill white -gravity center \
   -font "Arial" -pointsize 80 label:"🤖" icon128.png
-convert icon128.png -resize 48x48 icon48.png
-convert icon128.png -resize 16x16 icon16.png
+magick icon128.png -resize 48x48 icon48.png
+magick icon128.png -resize 16x16 icon16.png
 ```
 
 Or use an online icon generator and save as `icon16.png`, `icon48.png`, and `icon128.png` in the `icons/` directory.
