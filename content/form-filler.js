@@ -5,12 +5,26 @@ class FormFiller {
     this.detector = formDetector;
     this.filledFields = new Map();
     this.pendingFields = [];
+    this.profileWarningShown = false; // Prevent notification spam
   }
 
   /**
    * Auto-fill form fields
    */
   async autoFill(userProfile, requireConfirmation = true) {
+    // FIX: Check profile existence once to avoid spamming
+    if (!userProfile || Object.keys(userProfile).length === 0) {
+      if (!this.profileWarningShown) {
+        if (window.UI && window.UI.showNotification) {
+          window.UI.showNotification('Please set up your profile in settings', 'warning');
+        } else {
+          console.warn('[Job Assistant] Please set up your profile in settings');
+        }
+        this.profileWarningShown = true;
+      }
+      return { filled: 0, total: 0 };
+    }
+
     const fields = this.detector.getFillableFields();
     const jobInfo = this.detector.getJobInfo();
 
@@ -190,13 +204,15 @@ class FormFiller {
     this.detector.platform.fillField(field, value);
 
     // Add visual indicator
-    field.element.style.borderColor = '#4CAF50';
-    field.element.style.borderWidth = '2px';
+    if (field.element) {
+        field.element.style.borderColor = '#4CAF50';
+        field.element.style.borderWidth = '2px';
 
-    setTimeout(() => {
-      field.element.style.borderColor = '';
-      field.element.style.borderWidth = '';
-    }, 2000);
+        setTimeout(() => {
+        field.element.style.borderColor = '';
+        field.element.style.borderWidth = '';
+        }, 2000);
+    }
   }
 
   /**
@@ -306,6 +322,7 @@ class FormFiller {
 
     this.filledFields.clear();
     this.pendingFields = [];
+    // Note: We do NOT reset profileWarningShown here to keep it persistent for the session
   }
 }
 
