@@ -3,12 +3,11 @@
 /* Main Panel Container */
 .job-assistant-panel {
   position: fixed;
-  top: 50%;
+  top: 80px;
   right: 0;
-  transform: translateY(-50%);
   z-index: 999998;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 

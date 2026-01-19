@@ -222,6 +222,93 @@ document.getElementById('clear-learning').addEventListener('click', async () => 
   }
 });
 
+// Export settings
+document.getElementById('btn-export').addEventListener('click', async () => {
+  try {
+    // Get all data from storage
+    const allData = await chrome.storage.local.get(null);
+
+    // Create export object with timestamp
+    const exportData = {
+      version: '1.0.0',
+      exportDate: new Date().toISOString(),
+      data: {
+        userResume: allData.userResume || null,
+        linkedInProfile: allData.linkedInProfile || null,
+        apiKeys: allData.apiKeys || {},
+        preferences: allData.preferences || {},
+        applications: allData.applications || [],
+        learningData: allData.learningData || { responses: [], patterns: [] }
+      }
+    };
+
+    // Convert to JSON
+    const jsonString = JSON.stringify(exportData, null, 2);
+
+    // Create blob and download
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `job-assistant-settings-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    showToast('Settings exported successfully!', 'success');
+  } catch (error) {
+    console.error('Error exporting settings:', error);
+    showToast('Error exporting settings', 'error');
+  }
+});
+
+// Import settings
+document.getElementById('btn-import').addEventListener('click', async () => {
+  const fileInput = document.getElementById('import-file');
+  const file = fileInput.files[0];
+
+  if (!file) {
+    showToast('Please select a file to import', 'warning');
+    return;
+  }
+
+  try {
+    const fileContent = await readFileAsText(file);
+    const importData = JSON.parse(fileContent);
+
+    // Validate import data
+    if (!importData.version || !importData.data) {
+      showToast('Invalid settings file format', 'error');
+      return;
+    }
+
+    // Confirm before overwriting
+    if (!confirm('This will overwrite your current settings. Are you sure you want to continue?')) {
+      return;
+    }
+
+    // Import all data
+    await chrome.storage.local.set({
+      userResume: importData.data.userResume,
+      linkedInProfile: importData.data.linkedInProfile,
+      apiKeys: importData.data.apiKeys,
+      preferences: importData.data.preferences,
+      applications: importData.data.applications,
+      learningData: importData.data.learningData,
+      initialized: true
+    });
+
+    showToast('Settings imported successfully! Reloading page...', 'success');
+
+    // Reload the page to show imported data
+    setTimeout(() => {
+      window.location.reload();
+    }, 1500);
+  } catch (error) {
+    console.error('Error importing settings:', error);
+    showToast('Error importing settings. Please check the file format.', 'error');
+  }
+});
+
 // Helper functions
 function showToast(message, type = 'info') {
   const toast = document.getElementById('toast');

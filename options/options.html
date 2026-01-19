@@ -17,6 +17,7 @@
       <button class="tab" data-tab="api-keys">API Keys</button>
       <button class="tab" data-tab="preferences">Preferences</button>
       <button class="tab" data-tab="history">History</button>
+      <button class="tab" data-tab="import-export">Import/Export</button>
     </nav>
 
     <main>
@@ -160,6 +161,55 @@
           </div>
 
           <button class="btn-danger" id="clear-learning">🗑️ Clear Learning Data</button>
+        </section>
+      </div>
+
+      <!-- Import/Export Tab -->
+      <div id="tab-import-export" class="tab-content">
+        <section class="card">
+          <h2>📥 Import Settings</h2>
+          <p class="description">Upload a previously exported settings file to restore your configuration.</p>
+
+          <div class="form-group">
+            <label>Select Settings File</label>
+            <input type="file" id="import-file" accept=".json">
+            <small>Choose a JSON file exported from this extension</small>
+          </div>
+
+          <button class="btn-save" id="btn-import">📥 Import Settings</button>
+
+          <div class="info-box" style="margin-top: 16px;">
+            <strong>What gets imported:</strong> All your API keys, resume, LinkedIn profile, preferences, and learning data will be restored from the file.
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>📤 Export Settings</h2>
+          <p class="description">Download all your settings to a JSON file. Use this to backup your configuration or transfer it to another browser.</p>
+
+          <div class="info-box">
+            <strong>What gets exported:</strong>
+            <ul style="margin: 8px 0; padding-left: 20px;">
+              <li>API Keys (OpenAI, Gemini, Anthropic)</li>
+              <li>Resume information</li>
+              <li>LinkedIn profile data</li>
+              <li>All preferences</li>
+              <li>Application history</li>
+              <li>Learning data (responses and patterns)</li>
+            </ul>
+          </div>
+
+          <button class="btn-save" id="btn-export">📤 Export All Settings</button>
+        </section>
+
+        <section class="card">
+          <h2>⚠️ Important Notes</h2>
+          <ul style="line-height: 1.8; color: #4a5568;">
+            <li><strong>Security:</strong> The exported file contains your API keys in plain text. Store it securely!</li>
+            <li><strong>Backup:</strong> Export your settings before updating the extension to avoid data loss.</li>
+            <li><strong>Transfer:</strong> Use export/import to move settings between devices or browsers.</li>
+            <li><strong>Format:</strong> Files are in JSON format and can be edited manually if needed.</li>
+          </ul>
         </section>
       </div>
     </main>
