@@ -1,0 +1,36 @@
+# Extension artifacts
+*.crx
+*.pem
+*.zip
+
+# API keys and sensitive data (if accidentally committed)
+api-keys.txt
+secrets.json
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node modules (if added later)
+node_modules/
+package-lock.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test files
+test/
+*.test.js
+
+# Distribution
+dist/
+build/

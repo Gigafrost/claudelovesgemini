@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Job Assistant</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <div class="header">
+      <h2>🤖 AI Job Assistant</h2>
+    </div>
+
+    <div class="status-section">
+      <div class="status-item">
+        <span class="label">Profile Status:</span>
+        <span id="profile-status" class="value">Loading...</span>
+      </div>
+      <div class="status-item">
+        <span class="label">API Keys:</span>
+        <span id="api-status" class="value">Loading...</span>
+      </div>
+      <div class="status-item">
+        <span class="label">Applications:</span>
+        <span id="app-count" class="value">0</span>
+      </div>
+    </div>
+
+    <div class="quick-actions">
+      <button id="btn-options" class="btn primary">
+        ⚙️ Settings
+      </button>
+      <button id="btn-view-history" class="btn secondary">
+        📋 View History
+      </button>
+    </div>
+
+    <div class="info-section">
+      <h3>Quick Start</h3>
+      <ol>
+        <li>Go to Settings to add your resume and LinkedIn info</li>
+        <li>Configure at least one API key (OpenAI, Gemini, or Claude)</li>
+        <li>Navigate to a job application page</li>
+        <li>Click the robot button to start filling</li>
+      </ol>
+    </div>
+
+    <div class="footer">
+      <a href="#" id="link-help">Help</a>
+      <span>•</span>
+      <a href="#" id="link-feedback">Feedback</a>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
