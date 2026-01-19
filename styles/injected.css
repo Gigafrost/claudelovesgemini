@@ -1,49 +1,109 @@
-/* AI Job Application Assistant Styles */
+/* AI Job Application Assistant Styles - Pull Tab Design */
 
-/* Floating Button */
-.job-assistant-float-btn {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  font-size: 28px;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 999999;
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.job-assistant-float-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-}
-
-/* Main Panel */
+/* Main Panel Container */
 .job-assistant-panel {
   position: fixed;
-  top: 20px;
-  right: -420px;
-  width: 400px;
-  max-height: 90vh;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
   z-index: 999998;
-  transition: right 0.3s ease-in-out;
-  overflow: hidden;
+  display: flex;
+  align-items: center;
+  transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Pull Tab */
+.job-assistant-tab {
+  position: absolute;
+  right: 100%;
+  top: 0;
+  width: 50px;
+  height: 180px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px 0 0 12px;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 8px;
+  cursor: pointer;
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  z-index: 1;
 }
 
-.job-assistant-panel.visible {
-  right: 20px;
+.job-assistant-tab:hover {
+  width: 55px;
+  box-shadow: -6px 0 16px rgba(0, 0, 0, 0.2);
 }
 
+.job-assistant-tab .tab-icon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.job-assistant-tab .tab-text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.job-assistant-tab .tab-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.job-assistant-tab .pending-badge {
+  background: #f56565;
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(245, 101, 101, 0.4);
+  animation: pulse-badge 2s infinite;
+}
+
+.job-assistant-tab .account-badge {
+  font-size: 18px;
+  display: none;
+  animation: bounce 2s infinite;
+}
+
+/* Panel Content */
+.job-assistant-content {
+  width: 420px;
+  max-height: 90vh;
+  background: white;
+  border-radius: 12px 0 0 12px;
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Expanded State */
+.job-assistant-panel.expanded .job-assistant-content {
+  transform: translateX(0);
+}
+
+.job-assistant-panel.expanded .job-assistant-tab {
+  box-shadow: none;
+}
+
+/* Panel Header */
 .job-assistant-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
@@ -51,6 +111,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-radius: 12px 0 0 0;
 }
 
 .job-assistant-header h3 {
@@ -59,22 +120,30 @@
   font-weight: 600;
 }
 
-.job-assistant-close {
-  background: none;
+.job-assistant-minimize {
+  background: rgba(255, 255, 255, 0.2);
   border: none;
   color: white;
-  font-size: 28px;
+  font-size: 24px;
   cursor: pointer;
   line-height: 1;
-  padding: 0;
-  width: 30px;
-  height: 30px;
+  padding: 4px 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  transition: background 0.2s;
 }
 
+.job-assistant-minimize:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Panel Body */
 .job-assistant-body {
   padding: 20px;
   overflow-y: auto;
   flex: 1;
+  max-height: calc(90vh - 60px);
 }
 
 /* Status Section */
@@ -840,27 +909,6 @@
   line-height: 1.5;
 }
 
-/* Account Badge on Floating Button */
-.job-assistant-float-btn {
-  position: relative;
-}
-
-.account-badge {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  background: #f39c12;
-  border-radius: 50%;
-  width: 22px;
-  height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  animation: bounce 2s infinite;
-}
-
 /* Review Button Styling */
 .job-assistant-btn.review {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -919,5 +967,16 @@
   }
   50% {
     transform: scale(1.1);
+  }
+}
+
+@keyframes pulse-badge {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(245, 101, 101, 0.4);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 4px 16px rgba(245, 101, 101, 0.6);
   }
 }

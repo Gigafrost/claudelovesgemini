@@ -1,4 +1,4 @@
-// UI injection for job application assistant
+// UI injection for job application assistant - Pull Tab Design
 
 class UIInjector {
   constructor() {
@@ -6,10 +6,11 @@ class UIInjector {
     this.fieldCards = new Map();
     this.pendingReviews = [];
     this.reviewCenter = null;
+    this.isExpanded = false;
   }
 
   /**
-   * Inject main control panel
+   * Inject main control panel with pull tab design
    */
   injectMainPanel() {
     if (this.mainPanel) return;
@@ -18,81 +19,91 @@ class UIInjector {
     panel.id = 'job-assistant-panel';
     panel.className = 'job-assistant-panel';
     panel.innerHTML = `
-      <div class="job-assistant-header">
-        <h3>🤖 AI Job Assistant</h3>
-        <button class="job-assistant-close" id="job-assistant-close">×</button>
+      <div class="job-assistant-tab" id="job-assistant-tab">
+        <div class="tab-icon">🤖</div>
+        <div class="tab-text">AI Assistant</div>
+        <div class="tab-badges">
+          <span class="pending-badge" id="tab-pending-badge" style="display: none;">0</span>
+          <span class="account-badge" id="tab-account-badge" style="display: none;">⚠️</span>
+        </div>
       </div>
-      <div class="job-assistant-body">
-        <div id="account-wall-banner" class="account-wall-banner" style="display: none;">
-          <div class="banner-icon">⚠️</div>
-          <div class="banner-content">
-            <strong>Account Required</strong>
-            <p id="account-wall-message"></p>
-          </div>
+      <div class="job-assistant-content">
+        <div class="job-assistant-header">
+          <h3>🤖 AI Job Assistant</h3>
+          <button class="job-assistant-minimize" id="job-assistant-minimize" title="Minimize">−</button>
         </div>
-
-        <div class="job-assistant-status">
-          <div class="status-item">
-            <span class="status-label">Platform:</span>
-            <span id="status-platform">Detecting...</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">Fields Found:</span>
-            <span id="status-fields">0</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">Filled:</span>
-            <span id="status-filled">0</span>
-          </div>
-          <div class="status-item" id="pending-count-container" style="display: none;">
-            <span class="status-label">Pending Review:</span>
-            <span id="status-pending">0</span>
-          </div>
-        </div>
-
-        <div class="job-assistant-actions">
-          <button class="job-assistant-btn review" id="btn-review-pending" style="display: none;">
-            🔍 Review <span id="review-count">0</span> Pending Fields
-          </button>
-          <button class="job-assistant-btn primary" id="btn-analyze-match">
-            📊 Analyze Job Match
-          </button>
-          <button class="job-assistant-btn primary" id="btn-auto-fill">
-            ✨ Auto Fill Application
-          </button>
-          <button class="job-assistant-btn secondary" id="btn-generate-cover-letter">
-            📝 Generate Cover Letter
-          </button>
-          <button class="job-assistant-btn secondary" id="btn-tailor-resume">
-            📄 Tailor Resume
-          </button>
-        </div>
-
-        <div id="job-match-results" class="job-match-results" style="display: none;">
-          <h4>Job Match Analysis</h4>
-          <div class="match-score">
-            <div class="score-circle" id="match-score-circle">
-              <span id="match-score">0</span>%
-            </div>
-            <div class="score-details">
-              <div class="score-bar">
-                <label>Skills</label>
-                <div class="bar"><div class="bar-fill" id="bar-skills"></div></div>
-              </div>
-              <div class="score-bar">
-                <label>Experience</label>
-                <div class="bar"><div class="bar-fill" id="bar-experience"></div></div>
-              </div>
-              <div class="score-bar">
-                <label>Education</label>
-                <div class="bar"><div class="bar-fill" id="bar-education"></div></div>
-              </div>
+        <div class="job-assistant-body">
+          <div id="account-wall-banner" class="account-wall-banner" style="display: none;">
+            <div class="banner-icon">⚠️</div>
+            <div class="banner-content">
+              <strong>Account Required</strong>
+              <p id="account-wall-message"></p>
             </div>
           </div>
-          <div class="recommendation" id="match-recommendation"></div>
-        </div>
 
-        <div id="pending-fields" class="pending-fields"></div>
+          <div class="job-assistant-status">
+            <div class="status-item">
+              <span class="status-label">Platform:</span>
+              <span id="status-platform">Detecting...</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Fields Found:</span>
+              <span id="status-fields">0</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Filled:</span>
+              <span id="status-filled">0</span>
+            </div>
+            <div class="status-item" id="pending-count-container" style="display: none;">
+              <span class="status-label">Pending Review:</span>
+              <span id="status-pending">0</span>
+            </div>
+          </div>
+
+          <div class="job-assistant-actions">
+            <button class="job-assistant-btn review" id="btn-review-pending" style="display: none;">
+              🔍 Review <span id="review-count">0</span> Pending Fields
+            </button>
+            <button class="job-assistant-btn primary" id="btn-analyze-match">
+              📊 Analyze Job Match
+            </button>
+            <button class="job-assistant-btn primary" id="btn-auto-fill">
+              ✨ Auto Fill Application
+            </button>
+            <button class="job-assistant-btn secondary" id="btn-generate-cover-letter">
+              📝 Generate Cover Letter
+            </button>
+            <button class="job-assistant-btn secondary" id="btn-tailor-resume">
+              📄 Tailor Resume
+            </button>
+          </div>
+
+          <div id="job-match-results" class="job-match-results" style="display: none;">
+            <h4>Job Match Analysis</h4>
+            <div class="match-score">
+              <div class="score-circle" id="match-score-circle">
+                <span id="match-score">0</span>%
+              </div>
+              <div class="score-details">
+                <div class="score-bar">
+                  <label>Skills</label>
+                  <div class="bar"><div class="bar-fill" id="bar-skills"></div></div>
+                </div>
+                <div class="score-bar">
+                  <label>Experience</label>
+                  <div class="bar"><div class="bar-fill" id="bar-experience"></div></div>
+                </div>
+                <div class="score-bar">
+                  <label>Education</label>
+                  <div class="bar"><div class="bar-fill" id="bar-education"></div></div>
+                </div>
+              </div>
+            </div>
+            <div class="recommendation" id="match-recommendation"></div>
+          </div>
+
+          <div id="pending-fields" class="pending-fields"></div>
+        </div>
       </div>
     `;
 
@@ -102,33 +113,22 @@ class UIInjector {
     // Add event listeners
     this.attachEventListeners();
 
-    // Add floating button to open panel
-    this.injectFloatingButton();
+    // Initially collapsed
+    this.isExpanded = false;
   }
 
   /**
-   * Inject floating button
-   */
-  injectFloatingButton() {
-    const button = document.createElement('button');
-    button.id = 'job-assistant-float-btn';
-    button.className = 'job-assistant-float-btn';
-    button.innerHTML = '🤖';
-    button.title = 'AI Job Assistant';
-
-    button.addEventListener('click', () => {
-      this.togglePanel();
-    });
-
-    document.body.appendChild(button);
-  }
-
-  /**
-   * Toggle panel visibility
+   * Toggle panel expansion
    */
   togglePanel() {
-    if (this.mainPanel) {
-      this.mainPanel.classList.toggle('visible');
+    if (!this.mainPanel) return;
+
+    this.isExpanded = !this.isExpanded;
+
+    if (this.isExpanded) {
+      this.mainPanel.classList.add('expanded');
+    } else {
+      this.mainPanel.classList.remove('expanded');
     }
   }
 
@@ -136,10 +136,19 @@ class UIInjector {
    * Attach event listeners
    */
   attachEventListeners() {
-    // Close button
-    const closeBtn = document.getElementById('job-assistant-close');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', () => this.togglePanel());
+    // Tab click - toggle expansion
+    const tab = document.getElementById('job-assistant-tab');
+    if (tab) {
+      tab.addEventListener('click', () => this.togglePanel());
+    }
+
+    // Minimize button - collapse panel
+    const minimizeBtn = document.getElementById('job-assistant-minimize');
+    if (minimizeBtn) {
+      minimizeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.togglePanel();
+      });
     }
 
     // Action buttons
@@ -175,6 +184,51 @@ class UIInjector {
     if (platformEl) platformEl.textContent = platform || 'Unknown';
     if (fieldsEl) fieldsEl.textContent = fieldsCount || 0;
     if (filledEl) filledEl.textContent = filledCount || 0;
+  }
+
+  /**
+   * Show account wall banner
+   */
+  showAccountWallBanner(accountWallInfo) {
+    const banner = document.getElementById('account-wall-banner');
+    const message = document.getElementById('account-wall-message');
+
+    if (banner && message && accountWallInfo.detected) {
+      message.textContent = `This site (${accountWallInfo.platform}) requires account creation before applying.`;
+      banner.style.display = 'flex';
+
+      // Add badge to tab
+      const tabBadge = document.getElementById('tab-account-badge');
+      if (tabBadge) {
+        tabBadge.style.display = 'inline-block';
+      }
+    }
+  }
+
+  /**
+   * Update pending review count
+   */
+  updatePendingCount(count) {
+    const pendingCountContainer = document.getElementById('pending-count-container');
+    const pendingCountEl = document.getElementById('status-pending');
+    const reviewBtn = document.getElementById('btn-review-pending');
+    const reviewCountEl = document.getElementById('review-count');
+    const tabBadge = document.getElementById('tab-pending-badge');
+
+    if (count > 0) {
+      if (pendingCountContainer) pendingCountContainer.style.display = 'flex';
+      if (pendingCountEl) pendingCountEl.textContent = count;
+      if (reviewBtn) reviewBtn.style.display = 'block';
+      if (reviewCountEl) reviewCountEl.textContent = count;
+      if (tabBadge) {
+        tabBadge.textContent = count;
+        tabBadge.style.display = 'inline-block';
+      }
+    } else {
+      if (pendingCountContainer) pendingCountContainer.style.display = 'none';
+      if (reviewBtn) reviewBtn.style.display = 'none';
+      if (tabBadge) tabBadge.style.display = 'none';
+    }
   }
 
   /**
@@ -225,49 +279,6 @@ class UIInjector {
     const barEl = document.getElementById(barId);
     if (barEl) {
       barEl.style.width = `${score}%`;
-    }
-  }
-
-  /**
-   * Show account wall banner
-   */
-  showAccountWallBanner(accountWallInfo) {
-    const banner = document.getElementById('account-wall-banner');
-    const message = document.getElementById('account-wall-message');
-
-    if (banner && message && accountWallInfo.detected) {
-      message.textContent = `This site (${accountWallInfo.platform}) requires account creation before applying.`;
-      banner.style.display = 'flex';
-
-      // Add badge to floating button
-      const floatBtn = document.getElementById('job-assistant-float-btn');
-      if (floatBtn && !floatBtn.querySelector('.account-badge')) {
-        const badge = document.createElement('span');
-        badge.className = 'account-badge';
-        badge.innerHTML = '⚠️';
-        badge.title = 'Account Required';
-        floatBtn.appendChild(badge);
-      }
-    }
-  }
-
-  /**
-   * Update pending review count
-   */
-  updatePendingCount(count) {
-    const pendingCountContainer = document.getElementById('pending-count-container');
-    const pendingCountEl = document.getElementById('status-pending');
-    const reviewBtn = document.getElementById('btn-review-pending');
-    const reviewCountEl = document.getElementById('review-count');
-
-    if (count > 0) {
-      if (pendingCountContainer) pendingCountContainer.style.display = 'flex';
-      if (pendingCountEl) pendingCountEl.textContent = count;
-      if (reviewBtn) reviewBtn.style.display = 'block';
-      if (reviewCountEl) reviewCountEl.textContent = count;
-    } else {
-      if (pendingCountContainer) pendingCountContainer.style.display = 'none';
-      if (reviewBtn) reviewBtn.style.display = 'none';
     }
   }
 
@@ -378,11 +389,18 @@ class UIInjector {
   }
 
   /**
-   * Add field to pending reviews (replaces old addPendingField for review workflow)
+   * Add field to pending reviews
    */
   addPendingReview(fieldData) {
     this.pendingReviews.push(fieldData);
     this.updatePendingCount(this.pendingReviews.length);
+  }
+
+  /**
+   * Add pending field card (legacy - redirects to addPendingReview)
+   */
+  addPendingField(fieldData) {
+    this.addPendingReview(fieldData);
   }
 
   /**
@@ -404,6 +422,19 @@ class UIInjector {
   }
 
   /**
+   * Remove pending field (legacy - redirects to removePendingReview)
+   */
+  removePendingField(fieldId) {
+    // Find index by field ID
+    const index = this.pendingReviews.findIndex(r =>
+      (r.field.id || r.field.name) === fieldId
+    );
+    if (index >= 0) {
+      this.removePendingReview(index);
+    }
+  }
+
+  /**
    * Clear all pending reviews
    */
   clearPendingReviews() {
@@ -411,91 +442,6 @@ class UIInjector {
     this.updatePendingCount(0);
     if (this.reviewCenter) {
       this.reviewCenter.remove();
-    }
-  }
-
-  /**
-   * Add pending field card (legacy - kept for compatibility)
-   */
-  addPendingField(fieldData) {
-    // Now just adds to pending reviews instead
-    this.addPendingReview(fieldData);
-    return;
-
-    // Old implementation kept as comment for reference
-    const container = document.getElementById('pending-fields');
-    if (!container) return;
-
-    const card = document.createElement('div');
-    card.className = 'field-card';
-    card.id = `field-card-${fieldData.field.id || fieldData.field.name}`;
-
-    card.innerHTML = `
-      <div class="field-card-header">
-        <strong>${fieldData.field.label || 'Question'}</strong>
-        <span class="winner-badge">${fieldData.winner}</span>
-      </div>
-      <div class="field-card-body">
-        <textarea class="field-response" readonly>${fieldData.value}</textarea>
-      </div>
-      <div class="field-card-actions">
-        <button class="btn-check" data-field-id="${fieldData.field.id || fieldData.field.name}">
-          ✓ Use This
-        </button>
-        <button class="btn-regenerate" data-field-id="${fieldData.field.id || fieldData.field.name}">
-          🔄 Regenerate
-        </button>
-        <button class="btn-show-all" data-field-id="${fieldData.field.id || fieldData.field.name}">
-          👁 Show All Versions
-        </button>
-      </div>
-      <div class="field-all-versions" style="display: none;">
-        <h5>All Versions:</h5>
-        ${Object.entries(fieldData.allResponses).map(([agent, response]) => `
-          <div class="version-item">
-            <strong>${agent}:</strong>
-            <p>${response}</p>
-          </div>
-        `).join('')}
-      </div>
-    `;
-
-    // Add event listeners
-    card.querySelector('.btn-check').addEventListener('click', (e) => {
-      const fieldId = e.target.dataset.fieldId;
-      window.dispatchEvent(new CustomEvent('jobAssistant:confirmField', {
-        detail: { fieldId }
-      }));
-      card.remove();
-    });
-
-    card.querySelector('.btn-regenerate').addEventListener('click', (e) => {
-      const fieldId = e.target.dataset.fieldId;
-      window.dispatchEvent(new CustomEvent('jobAssistant:regenerateField', {
-        detail: { fieldId }
-      }));
-      card.remove();
-    });
-
-    card.querySelector('.btn-show-all').addEventListener('click', (e) => {
-      const versionsEl = card.querySelector('.field-all-versions');
-      if (versionsEl) {
-        versionsEl.style.display = versionsEl.style.display === 'none' ? 'block' : 'none';
-      }
-    });
-
-    container.appendChild(card);
-    this.fieldCards.set(fieldData.field.id || fieldData.field.name, card);
-  }
-
-  /**
-   * Remove pending field card
-   */
-  removePendingField(fieldId) {
-    const card = this.fieldCards.get(fieldId);
-    if (card) {
-      card.remove();
-      this.fieldCards.delete(fieldId);
     }
   }
 
