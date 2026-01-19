@@ -51,7 +51,8 @@
 
     // Monitoring for changes (e.g., next page in multi-step form)
     detector.monitorFormChanges((newFields) => {
-      ui.updateStatus(platform?.getName(), newFields.length, filler.filledFields.size);
+      const currentPlatform = detector.detectPlatform();
+      ui.updateStatus(currentPlatform?.getName(), newFields.length, filler.filledFields.size);
     });
 
     ui.showNotification('AI Job Assistant ready!', 'success');
@@ -62,9 +63,9 @@
    */
   function setupPersistenceObserver() {
     const observer = new MutationObserver(() => {
-      const btn = document.getElementById('job-assistant-float-btn');
-      if (!btn) {
-        // Assistant button missing, re-attempt injection
+      // If the injected panel disappears (common in SPAs / DOM swaps), re-initialize
+      const panel = document.getElementById('job-assistant-panel');
+      if (!panel) {
         isInitialized = false;
         initialize();
       }
@@ -80,7 +81,9 @@
     ui.showLoading('btn-auto-fill');
     try {
       const result = await filler.autoFill(userProfile, true);
-      ui.updateStatus(detector.platform?.getName(), detector.fields.length, filler.filledFields.size);
+      const currentPlatform = detector.detectPlatform();
+      const fieldsCount = detector.getFormFields().length;
+      ui.updateStatus(currentPlatform?.getName(), fieldsCount, filler.filledFields.size);
       ui.showNotification(`Filled ${result.filled} fields. Review pending items.`, 'success');
     } catch (error) {
       ui.showNotification('Error filling form.', 'error');
@@ -102,7 +105,9 @@
   window.addEventListener('jobAssistant:confirmField', (e) => {
     filler.confirmField(e.detail.fieldId);
     ui.removePendingField(e.detail.fieldId);
-    ui.updateStatus(detector.platform?.getName(), detector.fields.length, filler.filledFields.size);
+    const currentPlatform = detector.detectPlatform();
+    const fieldsCount = detector.getFormFields().length;
+    ui.updateStatus(currentPlatform?.getName(), fieldsCount, filler.filledFields.size);
   });
 
   // Start initialization and observer
