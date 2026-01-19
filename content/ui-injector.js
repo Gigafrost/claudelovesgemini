@@ -4,6 +4,8 @@ class UIInjector {
   constructor() {
     this.mainPanel = null;
     this.fieldCards = new Map();
+    this.pendingReviews = [];
+    this.reviewCenter = null;
   }
 
   /**
@@ -21,6 +23,14 @@ class UIInjector {
         <button class="job-assistant-close" id="job-assistant-close">×</button>
       </div>
       <div class="job-assistant-body">
+        <div id="account-wall-banner" class="account-wall-banner" style="display: none;">
+          <div class="banner-icon">⚠️</div>
+          <div class="banner-content">
+            <strong>Account Required</strong>
+            <p id="account-wall-message"></p>
+          </div>
+        </div>
+
         <div class="job-assistant-status">
           <div class="status-item">
             <span class="status-label">Platform:</span>
@@ -34,9 +44,16 @@ class UIInjector {
             <span class="status-label">Filled:</span>
             <span id="status-filled">0</span>
           </div>
+          <div class="status-item" id="pending-count-container" style="display: none;">
+            <span class="status-label">Pending Review:</span>
+            <span id="status-pending">0</span>
+          </div>
         </div>
 
         <div class="job-assistant-actions">
+          <button class="job-assistant-btn review" id="btn-review-pending" style="display: none;">
+            🔍 Review <span id="review-count">0</span> Pending Fields
+          </button>
           <button class="job-assistant-btn primary" id="btn-analyze-match">
             📊 Analyze Job Match
           </button>
@@ -126,6 +143,10 @@ class UIInjector {
     }
 
     // Action buttons
+    document.getElementById('btn-review-pending')?.addEventListener('click', () => {
+      this.showReviewCenter();
+    });
+
     document.getElementById('btn-analyze-match')?.addEventListener('click', () => {
       window.dispatchEvent(new CustomEvent('jobAssistant:analyzeMatch'));
     });
@@ -208,9 +229,200 @@ class UIInjector {
   }
 
   /**
-   * Add pending field card
+   * Show account wall banner
+   */
+  showAccountWallBanner(accountWallInfo) {
+    const banner = document.getElementById('account-wall-banner');
+    const message = document.getElementById('account-wall-message');
+
+    if (banner && message && accountWallInfo.detected) {
+      message.textContent = `This site (${accountWallInfo.platform}) requires account creation before applying.`;
+      banner.style.display = 'flex';
+
+      // Add badge to floating button
+      const floatBtn = document.getElementById('job-assistant-float-btn');
+      if (floatBtn && !floatBtn.querySelector('.account-badge')) {
+        const badge = document.createElement('span');
+        badge.className = 'account-badge';
+        badge.innerHTML = '⚠️';
+        badge.title = 'Account Required';
+        floatBtn.appendChild(badge);
+      }
+    }
+  }
+
+  /**
+   * Update pending review count
+   */
+  updatePendingCount(count) {
+    const pendingCountContainer = document.getElementById('pending-count-container');
+    const pendingCountEl = document.getElementById('status-pending');
+    const reviewBtn = document.getElementById('btn-review-pending');
+    const reviewCountEl = document.getElementById('review-count');
+
+    if (count > 0) {
+      if (pendingCountContainer) pendingCountContainer.style.display = 'flex';
+      if (pendingCountEl) pendingCountEl.textContent = count;
+      if (reviewBtn) reviewBtn.style.display = 'block';
+      if (reviewCountEl) reviewCountEl.textContent = count;
+    } else {
+      if (pendingCountContainer) pendingCountContainer.style.display = 'none';
+      if (reviewBtn) reviewBtn.style.display = 'none';
+    }
+  }
+
+  /**
+   * Show Review Center modal
+   */
+  showReviewCenter() {
+    if (this.pendingReviews.length === 0) {
+      this.showNotification('No fields pending review', 'info');
+      return;
+    }
+
+    // Create review center modal
+    const modal = document.createElement('div');
+    modal.className = 'review-center-modal';
+    modal.innerHTML = `
+      <div class="review-center-content">
+        <div class="review-center-header">
+          <h3>Review Pending Fields (${this.pendingReviews.length})</h3>
+          <button class="review-center-close">×</button>
+        </div>
+        <div class="review-center-body">
+          ${this.pendingReviews.map((review, index) => `
+            <div class="review-item" data-review-index="${index}">
+              <div class="review-item-header">
+                <strong>${index + 1}. ${review.field.label || 'Question'}</strong>
+                <span class="confidence-badge ${this.getConfidenceClass(review.field.confidence)}">
+                  ${Math.round(review.field.confidence * 100)}% confidence
+                </span>
+              </div>
+              <div class="review-item-body">
+                <textarea class="review-response" readonly>${review.value}</textarea>
+                <div class="ai-details">
+                  <span class="winner-label">Selected by: <strong>${review.winner}</strong></span>
+                </div>
+              </div>
+              <div class="review-item-actions">
+                <button class="btn-review-accept" data-index="${index}">✓ Accept & Fill</button>
+                <button class="btn-review-regenerate" data-index="${index}">🔄 Regenerate</button>
+                <button class="btn-review-versions" data-index="${index}">👁 View All Versions</button>
+              </div>
+              <div class="review-all-versions" id="versions-${index}" style="display: none;">
+                ${Object.entries(review.allResponses).map(([agent, response]) => `
+                  <div class="version-item">
+                    <strong>${agent}:</strong>
+                    <p>${response.error || response}</p>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="review-center-footer">
+          <button class="btn-accept-all">✓ Accept All</button>
+          <button class="btn-cancel">Cancel</button>
+        </div>
+      </div>
+    `;
+
+    // Add event listeners
+    modal.querySelector('.review-center-close').addEventListener('click', () => modal.remove());
+    modal.querySelector('.btn-cancel').addEventListener('click', () => modal.remove());
+
+    modal.querySelector('.btn-accept-all').addEventListener('click', () => {
+      window.dispatchEvent(new CustomEvent('jobAssistant:acceptAllReviews'));
+      modal.remove();
+    });
+
+    modal.querySelectorAll('.btn-review-accept').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const index = parseInt(e.target.dataset.index);
+        window.dispatchEvent(new CustomEvent('jobAssistant:acceptReview', { detail: { index } }));
+        e.target.closest('.review-item').style.opacity = '0.5';
+        e.target.disabled = true;
+      });
+    });
+
+    modal.querySelectorAll('.btn-review-regenerate').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const index = parseInt(e.target.dataset.index);
+        window.dispatchEvent(new CustomEvent('jobAssistant:regenerateReview', { detail: { index } }));
+        e.target.closest('.review-item').style.opacity = '0.5';
+      });
+    });
+
+    modal.querySelectorAll('.btn-review-versions').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const index = parseInt(e.target.dataset.index);
+        const versionsDiv = document.getElementById(`versions-${index}`);
+        if (versionsDiv) {
+          versionsDiv.style.display = versionsDiv.style.display === 'none' ? 'block' : 'none';
+          e.target.textContent = versionsDiv.style.display === 'none' ? '👁 View All Versions' : '👁 Hide Versions';
+        }
+      });
+    });
+
+    document.body.appendChild(modal);
+    this.reviewCenter = modal;
+  }
+
+  /**
+   * Get confidence class for styling
+   */
+  getConfidenceClass(confidence) {
+    if (confidence >= 0.9) return 'high';
+    if (confidence >= 0.7) return 'medium';
+    return 'low';
+  }
+
+  /**
+   * Add field to pending reviews (replaces old addPendingField for review workflow)
+   */
+  addPendingReview(fieldData) {
+    this.pendingReviews.push(fieldData);
+    this.updatePendingCount(this.pendingReviews.length);
+  }
+
+  /**
+   * Remove pending review by index
+   */
+  removePendingReview(index) {
+    if (index >= 0 && index < this.pendingReviews.length) {
+      this.pendingReviews.splice(index, 1);
+      this.updatePendingCount(this.pendingReviews.length);
+
+      // Update review center if open
+      if (this.reviewCenter) {
+        this.reviewCenter.remove();
+        if (this.pendingReviews.length > 0) {
+          this.showReviewCenter();
+        }
+      }
+    }
+  }
+
+  /**
+   * Clear all pending reviews
+   */
+  clearPendingReviews() {
+    this.pendingReviews = [];
+    this.updatePendingCount(0);
+    if (this.reviewCenter) {
+      this.reviewCenter.remove();
+    }
+  }
+
+  /**
+   * Add pending field card (legacy - kept for compatibility)
    */
   addPendingField(fieldData) {
+    // Now just adds to pending reviews instead
+    this.addPendingReview(fieldData);
+    return;
+
+    // Old implementation kept as comment for reference
     const container = document.getElementById('pending-fields');
     if (!container) return;
 

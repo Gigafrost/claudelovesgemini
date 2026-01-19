@@ -13,13 +13,15 @@ class GenericPlatform {
   static getFields() {
     const fields = [];
 
-    // Find all form inputs on the page
-    const inputs = document.querySelectorAll('input, textarea, select');
+    // Find all form inputs on the page (including Shadow DOM)
+    const inputs = this.getAllInputs();
 
     inputs.forEach(input => {
       const label = this.findLabel(input);
 
       if (this.isVisibleAndEditable(input) && this.isLikelyFormField(input)) {
+        const fieldClassification = this.categorizeField(label, input);
+
         fields.push({
           element: input,
           type: input.tagName.toLowerCase(),
@@ -29,12 +31,35 @@ class GenericPlatform {
           label: label,
           placeholder: input.placeholder,
           required: input.hasAttribute('required'),
-          fieldType: this.categorizeField(label, input)
+          fieldType: fieldClassification.type,
+          confidence: fieldClassification.confidence,
+          isLongForm: input.tagName.toLowerCase() === 'textarea' ||
+                     (input.type === 'text' && input.maxLength > 500)
         });
       }
     });
 
     return fields;
+  }
+
+  /**
+   * Get all inputs including those in Shadow DOM
+   */
+  static getAllInputs() {
+    const inputs = [];
+
+    // Regular DOM inputs
+    inputs.push(...document.querySelectorAll('input, textarea, select'));
+
+    // Shadow DOM inputs
+    const elementsWithShadowRoot = document.querySelectorAll('*');
+    elementsWithShadowRoot.forEach(element => {
+      if (element.shadowRoot) {
+        inputs.push(...element.shadowRoot.querySelectorAll('input, textarea, select'));
+      }
+    });
+
+    return inputs;
   }
 
   static findLabel(input) {
@@ -81,56 +106,28 @@ class GenericPlatform {
   }
 
   static categorizeField(label, input) {
+    // Use FieldMapper for fuzzy matching if available
+    if (window.FieldMapper) {
+      const classification = window.FieldMapper.classifyField(
+        label,
+        input.name || '',
+        input.id || '',
+        input.placeholder || ''
+      );
+
+      return classification;
+    }
+
+    // Fallback to basic classification
     const text = `${label} ${input.name} ${input.id} ${input.placeholder}`.toLowerCase();
 
-    // Name fields
-    if ((text.includes('first') && text.includes('name')) || text === 'firstname') return 'firstName';
-    if ((text.includes('last') && text.includes('name')) || text === 'lastname') return 'lastName';
-    if (text.includes('full') && text.includes('name')) return 'fullName';
+    // Basic pattern matching as fallback
+    if (text.includes('email')) return { type: 'email', confidence: 0.9 };
+    if (text.includes('phone')) return { type: 'phone', confidence: 0.9 };
+    if (text.includes('first') && text.includes('name')) return { type: 'firstName', confidence: 0.9 };
+    if (text.includes('last') && text.includes('name')) return { type: 'lastName', confidence: 0.9 };
 
-    // Contact fields
-    if (text.includes('email')) return 'email';
-    if (text.includes('phone') || text.includes('mobile')) return 'phone';
-
-    // Location fields
-    if (text.includes('address') && !text.includes('email')) return 'address';
-    if (text.includes('city')) return 'city';
-    if (text.includes('state') || text.includes('province')) return 'state';
-    if (text.includes('zip') || text.includes('postal')) return 'zipCode';
-    if (text.includes('country')) return 'country';
-
-    // Professional links
-    if (text.includes('linkedin')) return 'linkedIn';
-    if (text.includes('github')) return 'github';
-    if (text.includes('portfolio') || text.includes('website')) return 'website';
-
-    // Documents
-    if (text.includes('resume') || text.includes('cv')) return 'resume';
-    if (text.includes('cover') && text.includes('letter')) return 'coverLetter';
-
-    // Application questions
-    if (text.includes('why') && (text.includes('interested') || text.includes('apply') || text.includes('join'))) return 'whyInterested';
-    if (text.includes('tell') && text.includes('about')) return 'aboutYourself';
-    if (text.includes('experience') || text.includes('describe')) return 'experience';
-    if (text.includes('qualification')) return 'qualifications';
-    if (text.includes('strength')) return 'strengths';
-    if (text.includes('weakness')) return 'weaknesses';
-    if (text.includes('challenge')) return 'challenges';
-
-    // Logistics
-    if (text.includes('salary') || text.includes('compensation')) return 'salary';
-    if (text.includes('available') || text.includes('start')) return 'availability';
-    if (text.includes('notice') && text.includes('period')) return 'noticePeriod';
-    if (text.includes('sponsor') || text.includes('visa') || text.includes('authorization')) return 'visa';
-    if (text.includes('relocate') || text.includes('willing to move')) return 'relocation';
-
-    // References
-    if (text.includes('reference')) return 'reference';
-
-    // Additional info
-    if (text.includes('additional') || text.includes('anything else') || text.includes('comments')) return 'additionalInfo';
-
-    return 'other';
+    return { type: 'other', confidence: 0.5 };
   }
 
   static isLikelyFormField(element) {

@@ -132,6 +132,16 @@ class FormDetector {
   }
 
   /**
+   * Detect if page has account wall
+   */
+  detectAccountWall() {
+    if (window.PlatformsConfig) {
+      return window.PlatformsConfig.detectAccountWall();
+    }
+    return { detected: false, platform: null, confidence: 0 };
+  }
+
+  /**
    * Monitor for form changes (for multi-page applications)
    */
   monitorFormChanges(callback) {
