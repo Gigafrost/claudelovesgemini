@@ -34,3 +34,18 @@ test/
 # Distribution
 dist/
 build/
+
+# For all extensions
+node_modules/
+.DS_Store
+dist/
+build/
+
+# For Browser Extensions (Chrome/Firefox)
+*.pem
+*.crx
+.env
+
+# For VS Code Extensions
+out/
+.vscode-test/
