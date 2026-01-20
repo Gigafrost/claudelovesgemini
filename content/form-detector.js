@@ -18,6 +18,7 @@ class FormDetector {
     // Check platforms in order of specificity
     const platforms = [
       window.WorkdayPlatform,
+      window.AshbyPlatform,
       window.GreenhousePlatform,
       window.LeverPlatform,
       window.GenericPlatform // Always last as fallback
@@ -43,11 +44,59 @@ class FormDetector {
     }
 
     if (this.platform) {
-      this.fields = this.platform.getFields();
+      let fields = this.platform.getFields();
+
+      // If a platform-specific adapter under-detects, supplement with the Generic scanner.
+      try {
+        const isGeneric = (this.platform === window.GenericPlatform) || (this.platform?.getName?.() === 'Generic');
+        if (!isGeneric && Array.isArray(fields) && fields.length < 6 && window.GenericPlatform?.getFieldScanReport) {
+          const genericReport = window.GenericPlatform.getFieldScanReport();
+          const genericFields = Array.isArray(genericReport?.fields) ? genericReport.fields : [];
+
+          const seenEls = new Set(fields.map(f => f.element).filter(Boolean));
+          const additions = genericFields.filter(f => f.element && !seenEls.has(f.element) && (f.confidence ?? 0) >= 0.6);
+          if (additions.length) {
+            fields = fields.concat(additions);
+          }
+        }
+      } catch (e) {
+        // ignore supplement failures
+      }
+
+      this.fields = fields;
       return this.fields;
     }
 
     return [];
+  }
+
+  /**
+   * Run a detection scan and return a debug-friendly report.
+   * Platforms can optionally implement getFieldScanReport().
+   */
+  debugScan() {
+    if (!this.platform) {
+      this.detectPlatform();
+    }
+
+    if (this.platform && typeof this.platform.getFieldScanReport === 'function') {
+      const report = this.platform.getFieldScanReport();
+      // Keep fields in sync with the latest scan
+      this.fields = report.fields || this.fields;
+      return report;
+    }
+
+    // Fallback: synthesize a minimal report
+    const fields = this.getFormFields();
+    return {
+      platform: this.platform?.getName?.() || 'Unknown',
+      url: window.location.href,
+      scanned: fields.length,
+      included: fields.length,
+      skipped: 0,
+      fields,
+      skippedCandidates: []
+    };
   }
 
   /**

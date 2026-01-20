@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "AI Job Application Assistant",
   "version": "1.0.1",
-  "description": "Automatically fill job applications using a multi-agent AI system including Grok.",
+  "description": "Automatically fill job applications using AI-powered multi-agent system with learning capabilities",
   "permissions": [
     "storage",
     "activeTab",
@@ -18,8 +18,11 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": [
+        "<all_urls>"
+      ],
       "js": [
+        "lib/dom-utils.js",
         "lib/storage.js",
         "lib/field-mappings.js",
         "lib/platforms-config.js",
@@ -28,6 +31,7 @@
         "lib/learning.js",
         "lib/resume-parser.js",
         "platforms/workday.js",
+        "platforms/ashby.js",
         "platforms/greenhouse.js",
         "platforms/lever.js",
         "platforms/generic.js",
@@ -39,21 +43,34 @@
         "content/ui-injector.js",
         "content/content.js"
       ],
-      "css": ["styles/injected.css"],
+      "css": [
+        "styles/injected.css"
+      ],
       "run_at": "document_idle"
     }
   ],
   "action": {
-    "default_popup": "popup/popup.html"
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
   "options_page": "options/options.html",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "web_accessible_resources": [
     {
-      "resources": ["styles/injected.css"],
-      "matches": ["<all_urls>"]
+      "resources": [
+        "styles/injected.css"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
     }
-  ],
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
-  }
+  ]
 }

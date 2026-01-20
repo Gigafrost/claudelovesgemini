@@ -14,7 +14,7 @@
 /* Pull Tab */
 .job-assistant-tab {
   position: absolute;
-  right: 100%;
+  right: 0;
   top: 0;
   width: 50px;
   height: 180px;
@@ -100,6 +100,9 @@
 
 .job-assistant-panel.expanded .job-assistant-tab {
   box-shadow: none;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(12px);
 }
 
 /* Panel Header */
@@ -208,6 +211,92 @@
 .job-assistant-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Debug panel */
+.debug-results {
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 14px;
+}
+
+.debug-header {
+  margin-bottom: 10px;
+}
+
+.debug-title {
+  font-weight: 700;
+  color: #2d3748;
+  margin-bottom: 6px;
+}
+
+.debug-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  color: #4a5568;
+  font-size: 12px;
+}
+
+.debug-section {
+  margin-top: 12px;
+}
+
+.debug-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  color: #2d3748;
+}
+
+.debug-list {
+  max-height: 260px;
+  overflow: auto;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 8px;
+}
+
+.debug-row {
+  padding: 8px 0;
+  border-bottom: 1px dashed #e2e8f0;
+}
+
+.debug-row-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.debug-pill {
+  background: #edf2f7;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: #4a5568;
+}
+
+.debug-pill.danger {
+  background: #fff5f5;
+  border-color: #fed7d7;
+  color: #c53030;
+}
+
+.debug-label {
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 12px;
+}
+
+.debug-row-meta {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  font-size: 11px;
+  color: #718096;
 }
 
 /* Match Results */

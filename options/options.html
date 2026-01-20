@@ -5,42 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Job Assistant - Settings</title>
   <link rel="stylesheet" href="options.css">
-  <style>
-    .input-wrapper {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
-    .toggle-password {
-      position: absolute;
-      right: 10px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 18px;
-      color: #718096;
-    }
-    .toggle-password:hover { color: #667eea; }
-    
-    /* Added styles for Backup/Restore buttons */
-    .button-group {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    
-    #import-file {
-      display: none; 
-    }
-    
-    .btn-secondary {
-      background: #e2e8f0;
-      color: #4a5568;
-    }
-    .btn-secondary:hover {
-      background: #cbd5e0;
-    }
-  </style>
 </head>
 <body>
   <div class="container">
@@ -53,6 +17,7 @@
       <button class="tab" data-tab="api-keys">API Keys</button>
       <button class="tab" data-tab="preferences">Preferences</button>
       <button class="tab" data-tab="history">History</button>
+      <button class="tab" data-tab="import-export">Import/Export</button>
     </nav>
 
     <main>
@@ -60,18 +25,33 @@
       <div id="tab-profile" class="tab-content active">
         <section class="card">
           <h2>Resume Information</h2>
+          <p class="description">Paste your resume text here or upload a file. This will be used to auto-fill applications.</p>
+
           <div class="form-group">
+            <label for="resume-text">Resume (Plain Text)</label>
             <textarea id="resume-text" rows="15" placeholder="Paste your resume here..."></textarea>
           </div>
+
+          <div class="form-group">
+            <label>Or Upload Resume File</label>
+            <input type="file" id="resume-file" accept=".txt,.pdf,.doc,.docx">
+            <small>Supported formats: TXT, PDF, DOC, DOCX</small>
+          </div>
         </section>
-        
+
         <section class="card">
-          <h2>Backup & Restore</h2>
-          <p class="description">Export your settings and resume to a JSON file, or import from a backup.</p>
-          <div class="button-group">
-             <button class="btn-save btn-secondary" id="export-data">📤 Export Data</button>
-             <button class="btn-save btn-secondary" id="import-btn">📥 Import Data</button>
-             <input type="file" id="import-file" accept=".json">
+          <h2>LinkedIn Profile</h2>
+          <p class="description">Provide your LinkedIn information for more comprehensive auto-fill.</p>
+
+          <div class="form-group">
+            <label for="linkedin-url">LinkedIn Profile URL</label>
+            <input type="url" id="linkedin-url" placeholder="https://linkedin.com/in/yourprofile">
+          </div>
+
+          <div class="form-group">
+            <label for="linkedin-json">LinkedIn Data (JSON)</label>
+            <textarea id="linkedin-json" rows="10" placeholder='{"name": "Your Name", "headline": "...", ...}'></textarea>
+            <small>Export your LinkedIn data or paste manually</small>
           </div>
         </section>
 
@@ -82,59 +62,170 @@
       <div id="tab-api-keys" class="tab-content">
         <section class="card">
           <h2>AI Provider API Keys</h2>
+          <p class="description">Configure at least one API key to enable AI-powered responses. The extension uses free/low-cost models.</p>
+
           <div class="form-group">
             <label for="api-openai">OpenAI API Key</label>
-            <div class="input-wrapper">
-              <input type="password" id="api-openai" placeholder="sk-...">
-              <button class="toggle-password" data-target="api-openai">👁️</button>
-            </div>
+            <input type="password" id="api-openai" placeholder="sk-...">
+            <small>
+              <a href="https://platform.openai.com/api-keys" target="_blank">Get API key</a>
+              | Uses: gpt-3.5-turbo
+            </small>
           </div>
+
           <div class="form-group">
             <label for="api-gemini">Google Gemini API Key</label>
-            <div class="input-wrapper">
-              <input type="password" id="api-gemini" placeholder="AI...">
-              <button class="toggle-password" data-target="api-gemini">👁️</button>
-            </div>
+            <input type="password" id="api-gemini" placeholder="AI...">
+            <small>
+              <a href="https://makersuite.google.com/app/apikey" target="_blank">Get API key</a>
+              | Uses: gemini-pro (free tier available)
+            </small>
           </div>
+
           <div class="form-group">
             <label for="api-anthropic">Anthropic Claude API Key</label>
-            <div class="input-wrapper">
-              <input type="password" id="api-anthropic" placeholder="sk-ant-...">
-              <button class="toggle-password" data-target="api-anthropic">👁️</button>
-            </div>
+            <input type="password" id="api-anthropic" placeholder="sk-ant-...">
+            <small>
+              <a href="https://console.anthropic.com/" target="_blank">Get API key</a>
+              | Uses: claude-3-haiku
+            </small>
           </div>
+
           <div class="info-box">
-            <strong>🚀 Grok AI Enabled:</strong> Grok is automatically enabled via Puter.js (Free tier). No API key required for Grok!
+            <strong>💡 Tip:</strong> The extension uses a multi-agent voting system. Configure all three APIs for best results, but one is sufficient to get started.
           </div>
         </section>
+
         <button class="btn-save" id="save-api-keys">💾 Save API Keys</button>
       </div>
 
       <!-- Preferences Tab -->
       <div id="tab-preferences" class="tab-content">
         <section class="card">
-          <h2>Preferences</h2>
+          <h2>Application Preferences</h2>
+
           <div class="form-group checkbox-group">
-            <label><input type="checkbox" id="pref-auto-fill"> <span>Auto-fill immediately</span></label>
+            <label>
+              <input type="checkbox" id="pref-auto-fill">
+              <span>Auto-fill immediately without confirmation</span>
+            </label>
+            <small>If disabled, you'll review each field before filling</small>
+          </div>
+
+          <div class="form-group checkbox-group">
+            <label>
+              <input type="checkbox" id="pref-save-applications">
+              <span>Save application history</span>
+            </label>
+            <small>Keep a log of all applications you've filled</small>
+          </div>
+
+          <div class="form-group checkbox-group">
+            <label>
+              <input type="checkbox" id="pref-learn-responses">
+              <span>Learn from my feedback</span>
+            </label>
+            <small>Improve responses based on your check/regenerate actions</small>
           </div>
         </section>
+
         <button class="btn-save" id="save-preferences">💾 Save Preferences</button>
       </div>
 
       <!-- History Tab -->
       <div id="tab-history" class="tab-content">
         <section class="card">
-          <h2>History</h2>
-          <div id="history-list" class="history-list"></div>
-          <button class="btn-danger" id="clear-history">🗑️ Clear History</button>
+          <h2>Application History</h2>
+          <p class="description">View and manage your application history</p>
+
+          <div id="history-list" class="history-list">
+            <p class="empty-state">No applications yet</p>
+          </div>
+
+          <button class="btn-danger" id="clear-history">🗑️ Clear All History</button>
+        </section>
+
+        <section class="card">
+          <h2>Learning Data</h2>
+          <p class="description">Manage your feedback and learning data</p>
+
+          <div class="stats">
+            <div class="stat-item">
+              <span class="stat-value" id="stat-responses">0</span>
+              <span class="stat-label">Responses Learned</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value" id="stat-patterns">0</span>
+              <span class="stat-label">Patterns Detected</span>
+            </div>
+          </div>
+
+          <button class="btn-danger" id="clear-learning">🗑️ Clear Learning Data</button>
+        </section>
+      </div>
+
+      <!-- Import/Export Tab -->
+      <div id="tab-import-export" class="tab-content">
+        <section class="card">
+          <h2>📥 Import Settings</h2>
+          <p class="description">Upload a previously exported settings file to restore your configuration.</p>
+
+          <div class="form-group">
+            <label>Select Settings File</label>
+            <input type="file" id="import-file" accept=".json">
+            <small>Choose a JSON file exported from this extension</small>
+          </div>
+
+          <button class="btn-save" id="btn-import">📥 Import Settings</button>
+
+          <div class="info-box" style="margin-top: 16px;">
+            <strong>What gets imported:</strong> All your API keys, resume, LinkedIn profile, preferences, and learning data will be restored from the file.
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>📤 Export Settings</h2>
+          <p class="description">Download all your settings to a JSON file. Use this to backup your configuration or transfer it to another browser.</p>
+
+          <div class="info-box">
+            <strong>What gets exported:</strong>
+            <ul style="margin: 8px 0; padding-left: 20px;">
+              <li>API Keys (OpenAI, Gemini, Anthropic)</li>
+              <li>Resume information</li>
+              <li>LinkedIn profile data</li>
+              <li>All preferences</li>
+              <li>Application history</li>
+              <li>Learning data (responses and patterns)</li>
+            </ul>
+          </div>
+
+          <button class="btn-save" id="btn-export">📤 Export All Settings</button>
+        </section>
+
+        <section class="card">
+          <h2>⚠️ Important Notes</h2>
+          <ul style="line-height: 1.8; color: #4a5568;">
+            <li><strong>Security:</strong> The exported file contains your API keys in plain text. Store it securely!</li>
+            <li><strong>Backup:</strong> Export your settings before updating the extension to avoid data loss.</li>
+            <li><strong>Transfer:</strong> Use export/import to move settings between devices or browsers.</li>
+            <li><strong>Format:</strong> Files are in JSON format and can be edited manually if needed.</li>
+          </ul>
         </section>
       </div>
     </main>
+
+    <footer>
+      <p>AI Job Application Assistant v1.0.0</p>
+      <p>
+        <a href="https://github.com/yourusername/ai-job-assistant" target="_blank">GitHub</a>
+        •
+        <a href="https://github.com/yourusername/ai-job-assistant/issues" target="_blank">Report Issue</a>
+      </p>
+    </footer>
   </div>
+
   <div id="toast" class="toast"></div>
-  
-  <!-- Load Puter locally -->
-  <script src="../lib/puter.js"></script>
+
   <script src="options.js"></script>
 </body>
 </html>

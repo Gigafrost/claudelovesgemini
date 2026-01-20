@@ -12,7 +12,7 @@ class FormFiller {
    * Auto-fill form fields
    */
   async autoFill(userProfile, requireConfirmation = true) {
-    // FIX: Check profile existence once to avoid spamming
+    // Check profile existence once to avoid spamming
     if (!userProfile || Object.keys(userProfile).length === 0) {
       if (!this.profileWarningShown) {
         if (window.UI && window.UI.showNotification) {
@@ -205,13 +205,13 @@ class FormFiller {
 
     // Add visual indicator
     if (field.element) {
-        field.element.style.borderColor = '#4CAF50';
-        field.element.style.borderWidth = '2px';
+      field.element.style.borderColor = '#4CAF50';
+      field.element.style.borderWidth = '2px';
 
-        setTimeout(() => {
+      setTimeout(() => {
         field.element.style.borderColor = '';
         field.element.style.borderWidth = '';
-        }, 2000);
+      }, 2000);
     }
   }
 
@@ -322,7 +322,6 @@ class FormFiller {
 
     this.filledFields.clear();
     this.pendingFields = [];
-    // Note: We do NOT reset profileWarningShown here to keep it persistent for the session
   }
 }
 

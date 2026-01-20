@@ -13,7 +13,7 @@
   let isInitialized = false;
 
   /**
-   * Initialize the extension UI and detection
+   * Initialize the extension
    */
   async function initialize() {
     if (isInitialized) return;
@@ -29,9 +29,10 @@
     // Load user profile
     try {
       userProfile = await StorageManager.getUserProfile();
+
       if (!userProfile.resume && !userProfile.linkedIn) {
         ui.injectMainPanel();
-        ui.showNotification('Please set up your profile in settings', 'warning');
+        ui.showNotification('Please set up your resume and LinkedIn profile in the extension options', 'warning');
         return;
       }
     } catch (error) {
@@ -42,28 +43,252 @@
     // Inject UI
     ui.injectMainPanel();
 
-    // Detect platform
+    // Detect platform and get fields
     const platform = detector.detectPlatform();
     const fields = detector.getFormFields();
     jobInfo = detector.getJobInfo();
 
+    // Update UI status
     ui.updateStatus(platform?.getName(), fields.length, 0);
 
-    // Monitoring for changes (e.g., next page in multi-step form)
+    // Log job info
+    console.log('[Job Assistant] Job Info:', jobInfo);
+    console.log('[Job Assistant] Found fields:', fields.length);
+
+    // Monitor for form changes
     detector.monitorFormChanges((newFields) => {
-      const currentPlatform = detector.detectPlatform();
-      ui.updateStatus(currentPlatform?.getName(), newFields.length, filler.filledFields.size);
+      console.log('[Job Assistant] Form changed, new fields:', newFields.length);
+      ui.updateStatus(platform?.getName(), newFields.length, filler.filledFields.size);
     });
 
-    ui.showNotification('AI Job Assistant ready!', 'success');
+    // Show ready notification
+    ui.showNotification('AI Job Assistant ready! Click the robot button to start.', 'success');
   }
+
+  /**
+   * Analyze job match
+   */
+  async function analyzeMatch() {
+    if (!userProfile || !jobInfo) return;
+
+    ui.showLoading('btn-analyze-match');
+
+    try {
+      const analysis = await JobMatcher.analyzeMatch(
+        jobInfo.description,
+        jobInfo.title,
+        userProfile
+      );
+
+      console.log('[Job Assistant] Match analysis:', analysis);
+
+      ui.showMatchResults(analysis);
+      ui.showNotification(`Match Score: ${analysis.overallScore}% - ${analysis.recommendation}`, 'info');
+    } catch (error) {
+      console.error('[Job Assistant] Error analyzing match:', error);
+      ui.showNotification('Error analyzing job match. Please check your API keys.', 'error');
+    } finally {
+      ui.hideLoading('btn-analyze-match');
+    }
+  }
+
+  /**
+   * Auto-fill application
+   */
+  async function autoFill() {
+    if (!userProfile || !jobInfo) return;
+    // Check if at least one agent is available.
+    // With Grok (via Puter.js), API keys are optional.
+    const apiKeys = await StorageManager.getAPIKeys();
+    const hasKeyedAgent = !!(apiKeys.openai || apiKeys.gemini || apiKeys.anthropic);
+    const hasGrok = (typeof puter !== 'undefined' && puter?.ai?.chat);
+    if (!hasKeyedAgent && !hasGrok) {
+      ui.showNotification('Add an API key in settings (OpenAI/Gemini/Claude) or enable Grok (Puter) to generate answers.', 'error');
+      return;
+    }
+
+    ui.showLoading('btn-auto-fill');
+    ui.showNotification('Generating responses...', 'info');
+
+    try {
+      const result = await filler.autoFill(userProfile, true);
+
+      console.log('[Job Assistant] Auto-fill result:', result);
+
+      ui.updateStatus(
+        detector.platform?.getName(),
+        detector.fields.length,
+        filler.filledFields.size
+      );
+
+      ui.showNotification(`Filled ${result.filled} fields. Review pending responses below.`, 'success');
+    } catch (error) {
+      console.error('[Job Assistant] Error auto-filling:', error);
+      ui.showNotification('Error filling form. Check console for details.', 'error');
+    } finally {
+      ui.hideLoading('btn-auto-fill');
+    }
+  }
+
+  /**
+   * Generate cover letter
+   */
+  async function generateCoverLetter() {
+    if (!userProfile || !jobInfo) return;
+
+    ui.showLoading('btn-generate-cover-letter');
+
+    try {
+      const result = await CoverLetterGenerator.generate(
+        jobInfo.description,
+        jobInfo.title,
+        jobInfo.company,
+        userProfile
+      );
+
+      console.log('[Job Assistant] Cover letter generated:', result);
+
+      // Format the cover letter
+      const formatted = CoverLetterGenerator.formatCoverLetter(
+        result.coverLetter,
+        userProfile,
+        jobInfo.company
+      );
+
+      // Show in modal
+      ui.showModal(
+        'Generated Cover Letter',
+        `<textarea class="cover-letter-text" readonly>${formatted}</textarea>`,
+        [
+          {
+            id: 'copy',
+            label: '📋 Copy to Clipboard',
+            type: 'primary',
+            callback: () => {
+              navigator.clipboard.writeText(formatted);
+              ui.showNotification('Cover letter copied to clipboard!', 'success');
+            }
+          },
+          {
+            id: 'fill',
+            label: '✓ Fill in Form',
+            type: 'primary',
+            callback: () => {
+              // Find cover letter field and fill it
+              const coverLetterField = detector.fields.find(f => f.fieldType === 'coverLetter');
+              if (coverLetterField) {
+                filler.fillField(coverLetterField, formatted);
+                ui.showNotification('Cover letter filled in form!', 'success');
+              }
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('[Job Assistant] Error generating cover letter:', error);
+      ui.showNotification('Error generating cover letter. Please check your API keys.', 'error');
+    } finally {
+      ui.hideLoading('btn-generate-cover-letter');
+    }
+  }
+
+  /**
+   * Tailor resume
+   */
+  async function tailorResume() {
+    if (!userProfile || !jobInfo) return;
+
+    ui.showLoading('btn-tailor-resume');
+
+    try {
+      const result = await ResumeTailor.generateTailoredResume(
+        jobInfo.description,
+        jobInfo.title,
+        userProfile
+      );
+
+      console.log('[Job Assistant] Tailored resume:', result);
+
+      // Show in modal
+      const tips = ResumeTailor.getATSTips(result.atsScore);
+      const tipsHtml = tips.length > 0 ? `
+        <div class="ats-tips">
+          <h4>ATS Optimization Tips:</h4>
+          <ul>
+            ${tips.map(tip => `<li>${tip}</li>`).join('')}
+          </ul>
+        </div>
+      ` : '';
+
+      ui.showModal(
+        `Tailored Resume (ATS Score: ${result.atsScore}/100)`,
+        `
+          ${tipsHtml}
+          <textarea class="resume-text" readonly>${result.formatted}</textarea>
+        `,
+        [
+          {
+            id: 'copy',
+            label: '📋 Copy to Clipboard',
+            type: 'primary',
+            callback: () => {
+              navigator.clipboard.writeText(result.formatted);
+              ui.showNotification('Resume copied to clipboard!', 'success');
+            }
+          },
+          {
+            id: 'download',
+            label: '💾 Download as TXT',
+            type: 'secondary',
+            callback: () => {
+              const blob = new Blob([result.formatted], { type: 'text/plain' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `Resume_${jobInfo.company}_${jobInfo.title}.txt`;
+              a.click();
+              URL.revokeObjectURL(url);
+              ui.showNotification('Resume downloaded!', 'success');
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('[Job Assistant] Error tailoring resume:', error);
+      ui.showNotification('Error tailoring resume. Please check your API keys.', 'error');
+    } finally {
+      ui.hideLoading('btn-tailor-resume');
+    }
+  }
+
+  /**
+   * Confirm a field
+   */
+  function confirmField(fieldId) {
+    filler.confirmField(fieldId);
+    ui.removePendingField(fieldId);
+    ui.updateStatus(
+      detector.platform?.getName(),
+      detector.fields.length,
+      filler.filledFields.size
+    );
+    ui.showNotification('Field confirmed and filled!', 'success');
+  }
+
+  /**
+   * Regenerate a field
+   */
+  async function regenerateField(fieldId) {
+    ui.showNotification('Regenerating response...', 'info');
+    await filler.regenerateField(fieldId, userProfile, jobInfo);
+  }
+
 
   /**
    * MutationObserver to handle dynamic page changes in SPAs
    */
   function setupPersistenceObserver() {
     const observer = new MutationObserver(() => {
-      // If the injected panel disappears (common in SPAs / DOM swaps), re-initialize
       const panel = document.getElementById('job-assistant-panel');
       if (!panel) {
         isInitialized = false;
@@ -74,43 +299,48 @@
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
-  // --- Actions ---
-
-  async function autoFill() {
-    if (!userProfile || !jobInfo) return;
-    ui.showLoading('btn-auto-fill');
-    try {
-      const result = await filler.autoFill(userProfile, true);
-      const currentPlatform = detector.detectPlatform();
-      const fieldsCount = detector.getFormFields().length;
-      ui.updateStatus(currentPlatform?.getName(), fieldsCount, filler.filledFields.size);
-      ui.showNotification(`Filled ${result.filled} fields. Review pending items.`, 'success');
-    } catch (error) {
-      ui.showNotification('Error filling form.', 'error');
-    } finally {
-      ui.hideLoading('btn-auto-fill');
-    }
-  }
-
-  // Event listeners for UI actions
+  // Event listeners
+  window.addEventListener('jobAssistant:analyzeMatch', analyzeMatch);
   window.addEventListener('jobAssistant:autoFill', autoFill);
-  window.addEventListener('jobAssistant:analyzeMatch', async () => {
-    ui.showLoading('btn-analyze-match');
+  window.addEventListener('jobAssistant:generateCoverLetter', generateCoverLetter);
+  window.addEventListener('jobAssistant:tailorResume', tailorResume);
+
+  // Debug scan (field detection)
+  window.addEventListener('jobAssistant:debugScan', () => {
     try {
-      const analysis = await JobMatcher.analyzeMatch(jobInfo.description, jobInfo.title, userProfile);
-      ui.showMatchResults(analysis);
-    } finally { ui.hideLoading('btn-analyze-match'); }
+      const report = detector.debugScan();
+      ui.showDebugReport(report);
+    } catch (e) {
+      console.error('[Job Assistant] Debug scan failed:', e);
+      ui.showNotification('Debug scan failed. Check console for details.', 'error');
+    }
   });
 
   window.addEventListener('jobAssistant:confirmField', (e) => {
-    filler.confirmField(e.detail.fieldId);
-    ui.removePendingField(e.detail.fieldId);
-    const currentPlatform = detector.detectPlatform();
-    const fieldsCount = detector.getFormFields().length;
-    ui.updateStatus(currentPlatform?.getName(), fieldsCount, filler.filledFields.size);
+    confirmField(e.detail.fieldId);
   });
 
-  // Start initialization and observer
+  window.addEventListener('jobAssistant:regenerateField', (e) => {
+    regenerateField(e.detail.fieldId);
+  });
+
+  window.addEventListener('jobAssistant:fieldReady', (e) => {
+    ui.addPendingField(e.detail);
+  });
+
+  window.addEventListener('jobAssistant:fieldError', (e) => {
+    ui.showNotification(`Error: ${e.detail.error}`, 'error');
+  });
+
+  // Log application on page unload
+  window.addEventListener('beforeunload', () => {
+    if (filler.filledFields.size > 0) {
+      const data = filler.exportFilledData();
+      StorageManager.logApplication(data);
+    }
+  });
+
+  // Initialize
   initialize();
   setupPersistenceObserver();
 })();

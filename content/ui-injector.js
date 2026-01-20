@@ -76,7 +76,12 @@ class UIInjector {
             <button class="job-assistant-btn secondary" id="btn-tailor-resume">
               📄 Tailor Resume
             </button>
+            <button class="job-assistant-btn secondary" id="btn-debug-scan" title="Shows which fields were found and why others were skipped">
+              🐛 Debug Field Detection
+            </button>
           </div>
+
+          <div id="debug-results" class="debug-results" style="display: none;"></div>
 
           <div id="job-match-results" class="job-match-results" style="display: none;">
             <h4>Job Match Analysis</h4>
@@ -101,6 +106,8 @@ class UIInjector {
             </div>
             <div class="recommendation" id="match-recommendation"></div>
           </div>
+
+          <div id="debug-results" class="debug-results" style="display: none;"></div>
 
           <div id="pending-fields" class="pending-fields"></div>
         </div>
@@ -170,6 +177,10 @@ class UIInjector {
 
     document.getElementById('btn-tailor-resume')?.addEventListener('click', () => {
       window.dispatchEvent(new CustomEvent('jobAssistant:tailorResume'));
+    });
+
+    document.getElementById('btn-debug-scan')?.addEventListener('click', () => {
+      window.dispatchEvent(new CustomEvent('jobAssistant:debugScan'));
     });
   }
 
@@ -270,6 +281,128 @@ class UIInjector {
     }
 
     resultsEl.style.display = 'block';
+  }
+
+  /**
+   * Render a debug report for field detection.
+   * Report shape follows FormDetector.debugScan().
+   */
+  showDebugReport(report) {
+    const container = document.getElementById('debug-results');
+    if (!container) return;
+
+    container.style.display = 'block';
+
+    const platform = report?.platform || 'Unknown';
+    const scanned = report?.scanned ?? 0;
+    const included = report?.included ?? (report?.fields?.length || 0);
+    const skipped = report?.skipped ?? (report?.skippedCandidates?.length || 0);
+
+    // Clear
+    container.innerHTML = '';
+
+    const header = document.createElement('div');
+    header.className = 'debug-header';
+    header.innerHTML = `
+      <div class="debug-title">🐛 Field Detection Debug</div>
+      <div class="debug-summary">
+        <span><strong>Platform:</strong> ${this.escapeHtml(platform)}</span>
+        <span><strong>Scanned:</strong> ${scanned}</span>
+        <span><strong>Included:</strong> ${included}</span>
+        <span><strong>Skipped:</strong> ${skipped}</span>
+      </div>
+    `;
+    container.appendChild(header);
+
+    const fields = Array.isArray(report?.fields) ? report.fields : [];
+    const skippedList = Array.isArray(report?.skippedCandidates) ? report.skippedCandidates : [];
+
+    // Included fields list
+    const includedEl = document.createElement('div');
+    includedEl.className = 'debug-section';
+    includedEl.innerHTML = `<h4>Included Fields (${fields.length})</h4>`;
+
+    const includedList = document.createElement('div');
+    includedList.className = 'debug-list';
+    fields.slice(0, 200).forEach((f, idx) => {
+      const row = document.createElement('div');
+      row.className = 'debug-row';
+      const conf = Math.round(((f.confidence || 0) * 100));
+      const label = (f.label || '').toString();
+      const ft = f.fieldType || 'other';
+      const tag = f.type || '';
+      const it = f.inputType || '';
+      const ac = f.autocomplete || '';
+      const name = f.name || '';
+      const id = f.id || '';
+      const srcs = (f.labelSources || []).join(', ');
+
+      row.innerHTML = `
+        <div class="debug-row-top">
+          <span class="debug-pill">#${idx + 1}</span>
+          <span class="debug-pill">${this.escapeHtml(ft)}</span>
+          <span class="debug-pill">${conf}%</span>
+          <span class="debug-label">${this.escapeHtml(label || '(no label)')}</span>
+        </div>
+        <div class="debug-row-meta">
+          <span>${this.escapeHtml(tag)}${it ? `:${this.escapeHtml(it)}` : ''}</span>
+          ${ac ? `<span>autocomplete=${this.escapeHtml(ac)}</span>` : ''}
+          ${name ? `<span>name=${this.escapeHtml(name)}</span>` : ''}
+          ${id ? `<span>id=${this.escapeHtml(id)}</span>` : ''}
+          ${srcs ? `<span>labelSources=${this.escapeHtml(srcs)}</span>` : ''}
+        </div>
+      `;
+      includedList.appendChild(row);
+    });
+    includedEl.appendChild(includedList);
+    container.appendChild(includedEl);
+
+    // Skipped candidates list (collapsible)
+    const skippedEl = document.createElement('details');
+    skippedEl.className = 'debug-section';
+    skippedEl.open = false;
+    skippedEl.innerHTML = `<summary>Skipped Candidates (${skippedList.length})</summary>`;
+
+    const skippedWrap = document.createElement('div');
+    skippedWrap.className = 'debug-list';
+    skippedList.slice(0, 250).forEach((s, idx) => {
+      const row = document.createElement('div');
+      row.className = 'debug-row skipped';
+      const reason = s.reason || 'unknown';
+      const label = (s.label || '').toString();
+      const tag = s.tag || '';
+      const it = s.inputType || '';
+      const name = s.name || '';
+      const id = s.id || '';
+
+      row.innerHTML = `
+        <div class="debug-row-top">
+          <span class="debug-pill">#${idx + 1}</span>
+          <span class="debug-pill danger">${this.escapeHtml(reason)}</span>
+          <span class="debug-label">${this.escapeHtml(label || '(no label)')}</span>
+        </div>
+        <div class="debug-row-meta">
+          <span>${this.escapeHtml(tag)}${it ? `:${this.escapeHtml(it)}` : ''}</span>
+          ${name ? `<span>name=${this.escapeHtml(name)}</span>` : ''}
+          ${id ? `<span>id=${this.escapeHtml(id)}</span>` : ''}
+        </div>
+      `;
+      skippedWrap.appendChild(row);
+    });
+    skippedEl.appendChild(skippedWrap);
+    container.appendChild(skippedEl);
+
+    // Scroll the panel to show debug results
+    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  escapeHtml(str) {
+    return (str || '').toString()
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   /**
