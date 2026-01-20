@@ -15,23 +15,45 @@ class FormDetector {
    * Detect the platform and initialize
    */
   detectPlatform() {
+    console.log('[Job Assistant] Starting platform detection...');
+
     // Check platforms in order of specificity
     const platforms = [
-      window.WorkdayPlatform,
-      window.AshbyPlatform,
-      window.GreenhousePlatform,
-      window.LeverPlatform,
-      window.GenericPlatform // Always last as fallback
+      { name: 'Workday', class: window.WorkdayPlatform },
+      { name: 'Ashby', class: window.AshbyPlatform },
+      { name: 'Greenhouse', class: window.GreenhousePlatform },
+      { name: 'Lever', class: window.LeverPlatform },
+      { name: 'Generic', class: window.GenericPlatform } // Always last as fallback
     ];
 
-    for (const PlatformClass of platforms) {
-      if (PlatformClass.detect()) {
-        this.platform = PlatformClass;
-        console.log(`[Job Assistant] Detected platform: ${PlatformClass.getName()}`);
-        return PlatformClass;
+    for (const platform of platforms) {
+      try {
+        console.log(`[Job Assistant] Checking platform: ${platform.name}`);
+
+        if (!platform.class) {
+          console.warn(`[Job Assistant] Platform ${platform.name} not loaded`);
+          continue;
+        }
+
+        if (typeof platform.class.detect !== 'function') {
+          console.warn(`[Job Assistant] Platform ${platform.name} has no detect method`);
+          continue;
+        }
+
+        const detected = platform.class.detect();
+
+        if (detected) {
+          this.platform = platform.class;
+          console.log(`[Job Assistant] Detected platform: ${platform.name}`);
+          return platform.class;
+        }
+      } catch (error) {
+        console.error(`[Job Assistant] Error detecting platform ${platform.name}:`, error);
+        // Continue to next platform
       }
     }
 
+    console.warn('[Job Assistant] No platform detected');
     return null;
   }
 
