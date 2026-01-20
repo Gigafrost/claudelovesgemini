@@ -26,7 +26,6 @@
         "lib/storage.js",
         "lib/field-mappings.js",
         "lib/platforms-config.js",
-        "lib/puter.js",
         "lib/ai-agents.js",
         "lib/learning.js",
         "lib/resume-parser.js",

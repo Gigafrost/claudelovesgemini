@@ -130,8 +130,8 @@ document.getElementById('save-api-keys').addEventListener('click', async () => {
       gemini: document.getElementById('api-gemini').value.trim(),
       anthropic: document.getElementById('api-anthropic').value.trim()
     };
-    // Note: API keys are optional now. Grok (via Puter) can work without keys,
-    // but adding OpenAI/Gemini/Claude keys improves redundancy and quality.
+    // At least one API key is required. Gemini is recommended (free tier available at ai.google.dev)
+    // Multiple keys enable voting between agents for better quality responses.
 
     await chrome.storage.local.set({ apiKeys });
     showToast('API keys saved successfully!', 'success');

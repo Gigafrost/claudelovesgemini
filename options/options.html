@@ -62,23 +62,23 @@
       <div id="tab-api-keys" class="tab-content">
         <section class="card">
           <h2>AI Provider API Keys</h2>
-          <p class="description">Configure at least one API key to enable AI-powered responses. The extension uses free/low-cost models.</p>
+          <p class="description">Configure at least one API key to enable AI-powered responses. <strong>Gemini is recommended</strong> - it's free and easy to set up!</p>
+
+          <div class="form-group recommended">
+            <label for="api-gemini">Google Gemini API Key ⭐ Recommended (Free)</label>
+            <input type="password" id="api-gemini" placeholder="AI...">
+            <small>
+              <a href="https://ai.google.dev/gemini-api/docs/api-key" target="_blank">Get FREE API key</a>
+              | Uses: gemini-pro | 15 requests/minute free
+            </small>
+          </div>
 
           <div class="form-group">
             <label for="api-openai">OpenAI API Key</label>
             <input type="password" id="api-openai" placeholder="sk-...">
             <small>
               <a href="https://platform.openai.com/api-keys" target="_blank">Get API key</a>
-              | Uses: gpt-3.5-turbo
-            </small>
-          </div>
-
-          <div class="form-group">
-            <label for="api-gemini">Google Gemini API Key</label>
-            <input type="password" id="api-gemini" placeholder="AI...">
-            <small>
-              <a href="https://makersuite.google.com/app/apikey" target="_blank">Get API key</a>
-              | Uses: gemini-pro (free tier available)
+              | Uses: gpt-3.5-turbo | Paid
             </small>
           </div>
 
@@ -87,12 +87,12 @@
             <input type="password" id="api-anthropic" placeholder="sk-ant-...">
             <small>
               <a href="https://console.anthropic.com/" target="_blank">Get API key</a>
-              | Uses: claude-3-haiku
+              | Uses: claude-3-haiku | Paid
             </small>
           </div>
 
           <div class="info-box">
-            <strong>💡 Tip:</strong> The extension uses a multi-agent voting system. Configure all three APIs for best results, but one is sufficient to get started.
+            <strong>💡 How it works:</strong> Add one or more API keys. With multiple keys, the extension uses a voting system where AI agents compare responses and pick the best one. One key is enough to get started!
           </div>
         </section>
 

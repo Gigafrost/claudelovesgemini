@@ -97,13 +97,11 @@
    */
   async function autoFill() {
     if (!userProfile || !jobInfo) return;
-    // Check if at least one agent is available.
-    // With Grok (via Puter.js), API keys are optional.
+    // Check if at least one AI agent is configured
     const apiKeys = await StorageManager.getAPIKeys();
-    const hasKeyedAgent = !!(apiKeys.openai || apiKeys.gemini || apiKeys.anthropic);
-    const hasGrok = (typeof puter !== 'undefined' && puter?.ai?.chat);
-    if (!hasKeyedAgent && !hasGrok) {
-      ui.showNotification('Add an API key in settings (OpenAI/Gemini/Claude) or enable Grok (Puter) to generate answers.', 'error');
+    const hasAgent = !!(apiKeys.openai || apiKeys.gemini || apiKeys.anthropic);
+    if (!hasAgent) {
+      ui.showNotification('Please add an API key in settings. Gemini is free at ai.google.dev', 'error');
       return;
     }
 
