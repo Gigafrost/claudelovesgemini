@@ -2,10 +2,20 @@
 
 class LeverPlatform {
   static detect() {
-    return window.location.href.includes('lever.co') ||
-           window.location.href.includes('jobs.lever.co') ||
-           document.querySelector('.application-form') !== null ||
-           document.querySelector('[class*="lever"]') !== null;
+    // Check URL for Lever domains
+    const url = window.location.href.toLowerCase();
+    if (url.includes('lever.co') || url.includes('jobs.lever.co')) {
+      return true;
+    }
+
+    // Check for Lever-specific data attributes and elements
+    if (document.querySelector('[data-qa="posting-name"]') ||
+        document.querySelector('.posting-headline') ||
+        document.querySelector('meta[property="og:site_name"][content="Lever"]')) {
+      return true;
+    }
+
+    return false;
   }
 
   static getName() {
@@ -21,6 +31,7 @@ class LeverPlatform {
       const label = this.findLabel(input);
 
       if (this.isVisibleAndEditable(input)) {
+        const classification = this.categorizeField(label, input);
         fields.push({
           element: input,
           type: input.tagName.toLowerCase(),
@@ -30,7 +41,9 @@ class LeverPlatform {
           label: label,
           placeholder: input.placeholder,
           required: input.hasAttribute('required'),
-          fieldType: this.categorizeField(label, input)
+          fieldType: classification.type,
+          confidence: classification.confidence,
+          isLongForm: input.tagName.toLowerCase() === 'textarea'
         });
       }
     });
@@ -64,22 +77,27 @@ class LeverPlatform {
   }
 
   static categorizeField(label, input) {
+    // Use FieldMapper if available for consistent classification
+    if (window.FieldMapper && typeof window.FieldMapper.classifyElement === 'function') {
+      return window.FieldMapper.classifyElement(input, label);
+    }
+
     const text = `${label} ${input.name} ${input.id}`.toLowerCase();
 
-    if (text.includes('first') && text.includes('name')) return 'firstName';
-    if (text.includes('last') && text.includes('name')) return 'lastName';
-    if (text.includes('email')) return 'email';
-    if (text.includes('phone')) return 'phone';
-    if (text.includes('resume')) return 'resume';
-    if (text.includes('cover') && text.includes('letter')) return 'coverLetter';
-    if (text.includes('linkedin')) return 'linkedIn';
-    if (text.includes('website') || text.includes('portfolio')) return 'website';
-    if (text.includes('github')) return 'github';
-    if (text.includes('additional') && text.includes('information')) return 'additionalInfo';
-    if (text.includes('why')) return 'whyInterested';
-    if (text.includes('experience')) return 'experience';
+    if (text.includes('first') && text.includes('name')) return { type: 'firstName', confidence: 0.9 };
+    if (text.includes('last') && text.includes('name')) return { type: 'lastName', confidence: 0.9 };
+    if (text.includes('email')) return { type: 'email', confidence: 0.9 };
+    if (text.includes('phone')) return { type: 'phone', confidence: 0.9 };
+    if (text.includes('resume')) return { type: 'resume', confidence: 0.9 };
+    if (text.includes('cover') && text.includes('letter')) return { type: 'coverLetter', confidence: 0.9 };
+    if (text.includes('linkedin')) return { type: 'linkedIn', confidence: 0.95 };
+    if (text.includes('website') || text.includes('portfolio')) return { type: 'website', confidence: 0.85 };
+    if (text.includes('github')) return { type: 'github', confidence: 0.9 };
+    if (text.includes('additional') && text.includes('information')) return { type: 'additionalInfo', confidence: 0.8 };
+    if (text.includes('why')) return { type: 'whyInterested', confidence: 0.85 };
+    if (text.includes('experience')) return { type: 'experience', confidence: 0.8 };
 
-    return 'other';
+    return { type: 'other', confidence: 0.5 };
   }
 
   static isVisibleAndEditable(element) {
