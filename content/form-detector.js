@@ -15,6 +15,7 @@ class FormDetector {
    * Detect the platform and initialize
    */
   detectPlatform() {
+    const totalStart = performance.now();
     console.log('[Job Assistant] Starting platform detection...');
 
     // Check platforms in order of specificity
@@ -28,7 +29,7 @@ class FormDetector {
 
     for (const platform of platforms) {
       try {
-        console.log(`[Job Assistant] Checking platform: ${platform.name}`);
+        const start = performance.now();
 
         if (!platform.class) {
           console.warn(`[Job Assistant] Platform ${platform.name} not loaded`);
@@ -41,10 +42,19 @@ class FormDetector {
         }
 
         const detected = platform.class.detect();
+        const elapsed = (performance.now() - start).toFixed(2);
+
+        console.log(`[Job Assistant] Checked ${platform.name}: ${detected ? 'MATCH' : 'no'} (${elapsed}ms)`);
+
+        // Warn if detection took too long
+        if (elapsed > 1000) {
+          console.warn(`[Job Assistant] Platform ${platform.name} detection took ${elapsed}ms - too slow!`);
+        }
 
         if (detected) {
           this.platform = platform.class;
-          console.log(`[Job Assistant] Detected platform: ${platform.name}`);
+          const totalElapsed = (performance.now() - totalStart).toFixed(2);
+          console.log(`[Job Assistant] Platform detection complete: ${platform.name} (total: ${totalElapsed}ms)`);
           return platform.class;
         }
       } catch (error) {
@@ -53,7 +63,8 @@ class FormDetector {
       }
     }
 
-    console.warn('[Job Assistant] No platform detected');
+    const totalElapsed = (performance.now() - totalStart).toFixed(2);
+    console.warn(`[Job Assistant] No platform detected (total: ${totalElapsed}ms)`);
     return null;
   }
 
@@ -61,17 +72,30 @@ class FormDetector {
    * Get all form fields from the current platform
    */
   getFormFields() {
+    const totalStart = performance.now();
+
     if (!this.platform) {
       this.detectPlatform();
     }
 
     if (this.platform) {
+      const platformName = this.platform?.getName?.() || 'Unknown';
+
+      // Time the main field collection
+      const getFieldsStart = performance.now();
       let fields = this.platform.getFields();
+      const getFieldsElapsed = (performance.now() - getFieldsStart).toFixed(2);
+      console.log(`[Job Assistant] ${platformName}.getFields() found ${fields?.length || 0} fields (${getFieldsElapsed}ms)`);
+
+      if (getFieldsElapsed > 5000) {
+        console.warn(`[Job Assistant] Field collection took ${getFieldsElapsed}ms - too slow!`);
+      }
 
       // If a platform-specific adapter under-detects, supplement with the Generic scanner.
       try {
-        const isGeneric = (this.platform === window.GenericPlatform) || (this.platform?.getName?.() === 'Generic');
+        const isGeneric = (this.platform === window.GenericPlatform) || (platformName === 'Generic');
         if (!isGeneric && Array.isArray(fields) && fields.length < 6 && window.GenericPlatform?.getFieldScanReport) {
+          const supplementStart = performance.now();
           const genericReport = window.GenericPlatform.getFieldScanReport();
           const genericFields = Array.isArray(genericReport?.fields) ? genericReport.fields : [];
 
@@ -79,13 +103,19 @@ class FormDetector {
           const additions = genericFields.filter(f => f.element && !seenEls.has(f.element) && (f.confidence ?? 0) >= 0.6);
           if (additions.length) {
             fields = fields.concat(additions);
+            const supplementElapsed = (performance.now() - supplementStart).toFixed(2);
+            console.log(`[Job Assistant] Generic supplement added ${additions.length} fields (${supplementElapsed}ms)`);
           }
         }
       } catch (e) {
-        // ignore supplement failures
+        console.error('[Job Assistant] Supplement scan failed:', e);
       }
 
       this.fields = fields;
+
+      const totalElapsed = (performance.now() - totalStart).toFixed(2);
+      console.log(`[Job Assistant] getFormFields() complete: ${fields.length} fields total (${totalElapsed}ms)`);
+
       return this.fields;
     }
 

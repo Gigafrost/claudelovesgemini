@@ -20,12 +20,23 @@ class GenericPlatform {
    * This is the workhorse for detection across unknown sites.
    */
   static getFieldScanReport() {
+    const totalStart = performance.now();
+    const timings = {};
+
     const fields = [];
     const skipped = [];
 
+    // Time DOM collection
+    const collectStart = performance.now();
     const candidates = (window.DomUtils && window.DomUtils.collectFormControls)
       ? window.DomUtils.collectFormControls()
       : this.getAllInputs().map(el => ({ element: el, context: { kind: 'document' } }));
+    timings.collectControls = (performance.now() - collectStart).toFixed(2);
+
+    // Time field processing
+    const processStart = performance.now();
+    let labelTime = 0;
+    let classifyTime = 0;
 
     for (const c of candidates) {
       const el = c.element;
@@ -37,11 +48,17 @@ class GenericPlatform {
         continue;
       }
 
+      // Time label inference
+      const labelStart = performance.now();
       const labelInfo = (window.DomUtils && window.DomUtils.inferLabel)
         ? window.DomUtils.inferLabel(el)
         : { label: this.findLabel(el), sources: ['legacy'] };
+      labelTime += performance.now() - labelStart;
 
+      // Time classification
+      const classifyStart = performance.now();
       const fieldClassification = this.categorizeField(labelInfo.label, el);
+      classifyTime += performance.now() - classifyStart;
 
       const tag = el.tagName.toLowerCase();
       const inputType = (el.type || '').toLowerCase() || 'text';
@@ -96,6 +113,20 @@ class GenericPlatform {
       });
     }
 
+    timings.processFields = (performance.now() - processStart).toFixed(2);
+    timings.labelInference = labelTime.toFixed(2);
+    timings.classification = classifyTime.toFixed(2);
+    timings.total = (performance.now() - totalStart).toFixed(2);
+
+    // Log timing summary
+    console.log(`[Job Assistant] GenericPlatform scan: ${candidates.length} candidates, ${fields.length} fields`);
+    console.log(`[Job Assistant] Timings: collect=${timings.collectControls}ms, labels=${timings.labelInference}ms, classify=${timings.classification}ms, total=${timings.total}ms`);
+
+    // Warn if any step took too long
+    if (parseFloat(timings.total) > 5000) {
+      console.warn(`[Job Assistant] Field scan took ${timings.total}ms - too slow!`);
+    }
+
     // Store last report for debugging
     this._lastReport = {
       platform: this.getName(),
@@ -104,7 +135,8 @@ class GenericPlatform {
       included: fields.length,
       skipped: skipped.length,
       fields,
-      skippedCandidates: skipped.slice(0, 250) // cap to avoid huge UI
+      skippedCandidates: skipped.slice(0, 250), // cap to avoid huge UI
+      timings
     };
 
     return this._lastReport;
