@@ -1,12 +1,22 @@
 // Main content script - orchestrates all functionality
 
 (async function() {
-  console.log('[Job Assistant] Content script loaded');
+  console.log('[Job Assistant] Content script loaded on:', window.location.href);
+
+  // Early check - make sure required globals exist
+  const requiredGlobals = ['FormDetector', 'FormFiller', 'UIInjector', 'StorageManager'];
+  const missingGlobals = requiredGlobals.filter(g => !window[g]);
+  if (missingGlobals.length > 0) {
+    console.error('[Job Assistant] Missing required globals:', missingGlobals);
+    return;
+  }
 
   // Initialize components
+  console.log('[Job Assistant] Initializing components...');
   const detector = new FormDetector();
   const filler = new FormFiller(detector);
   const ui = new UIInjector();
+  console.log('[Job Assistant] Components initialized');
 
   let userProfile = null;
   let jobInfo = null;
@@ -18,8 +28,19 @@
   async function initialize() {
     if (isInitialized) return;
 
+    console.log('[Job Assistant] Starting initialization...');
+
     // Check if this is a job application page
-    if (!detector.isJobApplicationPage()) {
+    console.log('[Job Assistant] Checking if job application page...');
+    let isJobPage = false;
+    try {
+      isJobPage = detector.isJobApplicationPage();
+    } catch (e) {
+      console.error('[Job Assistant] Error checking job page:', e);
+    }
+
+    if (!isJobPage) {
+      console.log('[Job Assistant] Not a job application page, exiting');
       return;
     }
 
@@ -27,8 +48,10 @@
     isInitialized = true;
 
     // Load user profile
+    console.log('[Job Assistant] Loading user profile...');
     try {
       userProfile = await StorageManager.getUserProfile();
+      console.log('[Job Assistant] User profile loaded:', !!userProfile?.resume, !!userProfile?.linkedIn);
 
       if (!userProfile.resume && !userProfile.linkedIn) {
         ui.injectMainPanel();
@@ -40,15 +63,22 @@
       return;
     }
 
-    // Inject UI
+    // Inject UI first so user sees something
+    console.log('[Job Assistant] Injecting UI panel...');
     ui.injectMainPanel();
 
     // Detect platform and get fields
+    console.log('[Job Assistant] Detecting platform...');
     const platform = detector.detectPlatform();
+
+    console.log('[Job Assistant] Getting form fields...');
     const fields = detector.getFormFields();
+
+    console.log('[Job Assistant] Getting job info...');
     jobInfo = detector.getJobInfo();
 
     // Update UI status
+    console.log('[Job Assistant] Updating UI status...');
     ui.updateStatus(platform?.getName(), fields.length, 0);
 
     // Log job info
@@ -63,6 +93,7 @@
 
     // Show ready notification
     ui.showNotification('AI Job Assistant ready! Click the robot button to start.', 'success');
+    console.log('[Job Assistant] Initialization complete!');
   }
 
   /**
